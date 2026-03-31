@@ -64,13 +64,28 @@ The list of units can be found in [zone targets.lua](https://raw.githubuserconte
 **You can move the unitscan frame by holding CTRL+SHIFT+LEFT CLICK dragging.**
 
 
-**/unitscan** *lists the active scan targets*    
-**/unitscan name** *adds/removes **name** to/from the active scan targets*    
-**/unitscantarget** *targets the most recently found target*    
+**/unitscan** *lists the active scan targets*
+**/unitscan name** *adds/removes **name** to/from the active scan targets*
+**/unitscantarget** *targets the most recently found target*
+**/unitscansound** *toggles the alert sound effect on/off*
+**/unitscanflash** *toggles the screen edge glow on/off*
+**/unitscanblacklist** *lists all blacklisted targets*
+**/unitscanblacklist name** *adds/removes **name** from the blacklist*
+**/unitscanblacklist clear** *clears the entire blacklist*
 
-You can add custom targets to find players or targets not included in the zone targets list by using the command /unitscan *name*. 
+You can add custom targets to find players or targets not included in the zone targets list by using the command /unitscan *name*.
 
 Please Note: Targets added using /unitscan *name* will be removed from active scan targets after they are found. For a permanenet solution, edit [zone targets.lua](https://raw.githubusercontent.com/RetroCro/unitscan-turtle-hc/refs/heads/master/zonetargets.lua) and add a line entry for that unit.
+
+## Blacklist
+You can **CTRL+LEFT CLICK** the alert popup to blacklist a mob. Blacklisted mobs will no longer trigger alerts. The blacklist is saved across sessions.
+
+Use **/unitscanblacklist** to manage the blacklist via chat, or **/unitscanblacklist clear** to reset it.
+
+## Closing the Alert
+You can close the alert popup by:
+- Clicking the **X** button
+- Pressing **ESC**
 
 ## Complementary Addons
 [**SoloRaidTargetIcons**](https://github.com/refaim/SoloRaidTargetIcons) - This addon lets you put raid markers on units without being in a party (see video).
