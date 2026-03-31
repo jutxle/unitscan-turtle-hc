@@ -46,11 +46,14 @@ local YELLOW = {1, 1, .15}
 local CHECK_INTERVAL = 1
 
 unitscan_targets = {}
+unitscan_blacklist = {}
+unitscan_settings = {}
 
 do
 	local last_played
 	
 	function unitscan.play_sound()
+		if unitscan_settings.sound_disabled then return end
 		if not last_played or GetTime() - last_played > 10 then
 			SetCVar('MasterSoundEffects', 0)
 			SetCVar('MasterSoundEffects', 1)
@@ -89,25 +92,29 @@ do
 
 	function unitscan.check_for_targets()
 		for name, _ in unitscan_targets do
-			if name == unitscan.target(name) then
-				unitscan.foundTarget = name
-				unitscan.toggle_target(name)
-				unitscan.play_sound()
-				unitscan.flash.animation:Play()
-				unitscan.button:set_target()			
+			if not unitscan_blacklist[name] then
+				if name == unitscan.target(name) then
+					unitscan.foundTarget = name
+					unitscan.toggle_target(name)
+					unitscan.play_sound()
+					unitscan.flash.animation:Play()
+					unitscan.button:set_target()
+				end
+				unitscan.restoreTarget()
 			end
-			unitscan.restoreTarget()
 		end
 
 		for name, _ in unitscan_zonetargets do
-			if strupper(name) == unitscan.target(name) then
-				unitscan.foundTarget = name		
-				unitscan.toggle_zonetarget(name)
-				unitscan.play_sound()
-				unitscan.flash.animation:Play()
-				unitscan.button:set_target()
+			if not unitscan_blacklist[name] then
+				if strupper(name) == unitscan.target(name) then
+					unitscan.foundTarget = name
+					unitscan.toggle_zonetarget(name)
+					unitscan.play_sound()
+					unitscan.flash.animation:Play()
+					unitscan.button:set_target()
+				end
+				unitscan.restoreTarget()
 			end
-			unitscan.restoreTarget()
 		end
 	end
 
@@ -166,6 +173,7 @@ function unitscan.LOAD()
 			end
 		end)
 		function flash.animation:Play()
+			if unitscan_settings.flash_disabled then return end
 			if self.t0 then
 				self.loops = 4
 			else
@@ -178,6 +186,7 @@ function unitscan.LOAD()
 	
 	local button = CreateFrame("Button", "unitscan_button", UIParent)
 	button:Hide()
+	tinsert(UISpecialFrames, "unitscan_button")
 	unitscan.button = button
 	button:SetPoint('BOTTOM', UIParent, 0, 148)
 	button:SetWidth(200)
@@ -187,7 +196,7 @@ function unitscan.LOAD()
 	button:SetUserPlaced(true)
 	button:SetClampedToScreen(true)
 	button:SetScript('OnMouseDown', function()
-		if IsControlKeyDown() then
+		if IsControlKeyDown() and IsShiftKeyDown() then
 			this:RegisterForClicks()
 			this:StartMoving()
 		end
@@ -211,7 +220,16 @@ function unitscan.LOAD()
 		this:SetBackdropBorderColor(unpack(BROWN))
 	end)
 	button:SetScript('OnClick', function()
-		TargetByName(this:GetText(), true)
+		if IsControlKeyDown() then
+			local name = this:GetText()
+			if name and name ~= '' then
+				unitscan_blacklist[name] = true
+				unitscan.print('Blacklisted: ' .. name)
+				this:Hide()
+			end
+		else
+			TargetByName(this:GetText(), true)
+		end
 	end)
 	function button:set_target()
 		self:SetText(UnitName'target')
@@ -450,6 +468,54 @@ function SlashCmdList.UNITSCAN(parameter)
 		end
 	else
 		unitscan.toggle_target(name)
+	end
+end
+
+SLASH_UNITSCANSOUND1 = '/unitscansound'
+function SlashCmdList.UNITSCANSOUND()
+	unitscan_settings.sound_disabled = not unitscan_settings.sound_disabled
+	if unitscan_settings.sound_disabled then
+		unitscan.print('Sound disabled.')
+	else
+		unitscan.print('Sound enabled.')
+	end
+end
+
+SLASH_UNITSCANFLASH1 = '/unitscanflash'
+function SlashCmdList.UNITSCANFLASH()
+	unitscan_settings.flash_disabled = not unitscan_settings.flash_disabled
+	if unitscan_settings.flash_disabled then
+		unitscan.print('Screen flash disabled.')
+	else
+		unitscan.print('Screen flash enabled.')
+	end
+end
+
+SLASH_UNITSCANBLACKLIST1 = '/unitscanblacklist'
+function SlashCmdList.UNITSCANBLACKLIST(parameter)
+	local _, _, name = strfind(parameter, '^%s*(.-)%s*$')
+
+	if name == 'clear' then
+		unitscan_blacklist = {}
+		unitscan.print('Blacklist cleared.')
+	elseif name == '' then
+		local count = 0
+		unitscan.print("Blacklisted targets:")
+		for key in pairs(unitscan_blacklist) do
+			unitscan.print(key)
+			count = count + 1
+		end
+		if count == 0 then
+			unitscan.print('(none)')
+		end
+	else
+		if unitscan_blacklist[name] then
+			unitscan_blacklist[name] = nil
+			unitscan.print('Removed from blacklist: ' .. name)
+		else
+			unitscan_blacklist[name] = true
+			unitscan.print('Blacklisted: ' .. name)
+		end
 	end
 end
 
